@@ -4,6 +4,7 @@ import InputError from '@/Components/InputError.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import {useForm} from '@inertiajs/vue3';
 import {ref} from 'vue';
+import DropdownLink from "@/Components/DropdownLink.vue";
 
 const props = defineProps(['chirp']);
 
@@ -48,6 +49,9 @@ const editing = ref(false);
                             @click="editing = true">
                             Edit
                         </button>
+                        <DropdownLink :href="route('chirps.destroy', chirp.id)" as="button" method="delete">
+                            Delete
+                        </DropdownLink>
                     </template>
                 </Dropdown>
 

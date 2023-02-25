@@ -102,4 +102,18 @@ class ChirpsTest extends TestCase
 
         $this->assertSame($chirp->message, $chirp->message);
     }
+
+    public function test_chirps_can_be_deleted(): void
+    {
+        $this->withoutExceptionHandling();
+        $user = $this->login();
+
+        $chirp = Chirp::factory()->create(['user_id' => $user->id]);
+
+        $response = $this->delete("/chirps/{$chirp->id}");
+
+        $response->assertRedirect('/chirps')->assertSessionHasNoErrors();
+
+        $this->assertModelMissing($chirp);
+    }
 }
