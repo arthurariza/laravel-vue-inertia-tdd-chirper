@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\Chirp;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
 class ChirpsTest extends TestCase
@@ -16,7 +18,7 @@ class ChirpsTest extends TestCase
 
         $response = $this
             ->actingAs($user)
-            ->get('/profile');
+            ->get('/chirps');
 
         $response->assertOk();
     }
@@ -46,5 +48,58 @@ class ChirpsTest extends TestCase
         $this->assertDatabaseHas('chirps', [
             'message' => 'Test message'
         ]);
+    }
+
+    public function test_index_shows_all_chirps(): void
+    {
+        $user = $this->login();
+
+        Chirp::factory(3)->create(['user_id' => $user->id]);
+
+        $this
+            ->get('/chirps')
+            ->assertInertia(fn(AssertableInertia $page) => $page
+                ->has('chirps', 3)
+            );
+    }
+
+    public function test_chirp_can_be_updated(): void
+    {
+        $user = $this->login();
+
+        $chirp = Chirp::factory()->create(['user_id' => $user->id]);
+
+        $response = $this
+            ->put("/chirps/{$chirp->id}", [
+                'message' => 'New Message',
+            ]);
+
+        $response
+            ->assertSessionHasNoErrors()
+            ->assertRedirect('/chirps');
+
+        $chirp->refresh();
+
+        $this->assertSame('New Message', $chirp->message);
+    }
+
+    public function test_chirp_can_be_updated_by_creator(): void
+    {
+        $this->login();
+
+        $chirp = Chirp::factory()->create();
+
+        $response = $this
+            ->put("/chirps/{$chirp->id}", [
+                'message' => 'New Message',
+            ]);
+
+
+        $response
+            ->assertForbidden();
+
+        $chirp->refresh();
+
+        $this->assertSame($chirp->message, $chirp->message);
     }
 }
