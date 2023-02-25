@@ -105,7 +105,6 @@ class ChirpsTest extends TestCase
 
     public function test_chirps_can_be_deleted(): void
     {
-        $this->withoutExceptionHandling();
         $user = $this->login();
 
         $chirp = Chirp::factory()->create(['user_id' => $user->id]);
@@ -115,5 +114,29 @@ class ChirpsTest extends TestCase
         $response->assertRedirect('/chirps')->assertSessionHasNoErrors();
 
         $this->assertModelMissing($chirp);
+    }
+
+    public function test_required_fields_are_validated(): void
+    {
+        $user = $this->login();
+
+        $chirp = Chirp::factory()->make(['user_id' => $user->id]);
+
+        $response = $this->post("/chirps", [
+            'message' => $chirp->message
+        ]);
+
+        $response->assertSessionHasNoErrors();
+    }
+
+    public function test_validation_messages_are_displayed(): void
+    {
+        $user = $this->login();
+
+        $chirp = Chirp::factory()->make(['user_id' => $user->id]);
+
+        $response = $this->post("/chirps", []);
+
+        $response->assertSessionHasErrors(['message']);
     }
 }
