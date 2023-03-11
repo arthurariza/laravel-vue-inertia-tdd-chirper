@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Chirp;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
@@ -133,10 +134,23 @@ class ChirpsTest extends TestCase
     {
         $user = $this->login();
 
-        $chirp = Chirp::factory()->make(['user_id' => $user->id]);
+        Chirp::factory()->make(['user_id' => $user->id]);
 
         $response = $this->post("/chirps", []);
 
         $response->assertSessionHasErrors(['message']);
+    }
+
+    public function test_users_are_notified_when_chirps_are_created(): void
+    {
+        Notification::fake();
+
+        $this->login();
+
+        User::factory(2)->create();
+
+        $this->post("/chirps", ['message' => 'Chirp']);
+
+        Notification::assertCount(2);
     }
 }
