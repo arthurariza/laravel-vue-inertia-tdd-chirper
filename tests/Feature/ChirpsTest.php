@@ -15,10 +15,9 @@ class ChirpsTest extends TestCase
 
     public function test_chirps_page_is_displayed(): void
     {
-        $user = User::factory()->create();
+        $this->login();
 
         $response = $this
-            ->actingAs($user)
             ->get('/chirps');
 
         $response->assertOk();
@@ -27,24 +26,23 @@ class ChirpsTest extends TestCase
     public function test_chirps_page_is_displayed_to_authenticated_users(): void
     {
         $response = $this
-            ->get('/profile');
+            ->get(route('chirps.index'));
 
         $response->assertRedirect('/login');
     }
 
     public function test_user_can_create_chirps(): void
     {
-        $user = User::factory()->create();
+        $user = $this->login();
 
         $response = $this
-            ->actingAs($user)
-            ->post('/chirps', [
+            ->post(route('chirps.index'), [
                 'message' => 'Test message'
             ]);
 
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect('/chirps');
+            ->assertRedirect(route('chirps.index'));
 
         $this->assertDatabaseHas('chirps', [
             'message' => 'Test message'
@@ -58,26 +56,26 @@ class ChirpsTest extends TestCase
         Chirp::factory(3)->create(['user_id' => $user->id]);
 
         $this
-            ->get('/chirps')
+            ->get(route('chirps.index'))
             ->assertInertia(fn(AssertableInertia $page) => $page
                 ->has('chirps', 3)
             );
     }
 
-    public function test_chirp_can_be_updated(): void
+    public function test_chirps_can_be_updated(): void
     {
         $user = $this->login();
 
         $chirp = Chirp::factory()->create(['user_id' => $user->id]);
 
         $response = $this
-            ->put("/chirps/{$chirp->id}", [
+            ->put(route('chirps.update', $chirp), [
                 'message' => 'New Message',
             ]);
 
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect('/chirps');
+            ->assertRedirect(route('chirps.index'));
 
         $chirp->refresh();
 
@@ -91,7 +89,7 @@ class ChirpsTest extends TestCase
         $chirp = Chirp::factory()->create();
 
         $response = $this
-            ->put("/chirps/{$chirp->id}", [
+            ->put(route('chirps.update', $chirp), [
                 'message' => 'New Message',
             ]);
 
@@ -110,9 +108,9 @@ class ChirpsTest extends TestCase
 
         $chirp = Chirp::factory()->create(['user_id' => $user->id]);
 
-        $response = $this->delete("/chirps/{$chirp->id}");
+        $response = $this->delete(route('chirps.destroy', $chirp));
 
-        $response->assertRedirect('/chirps')->assertSessionHasNoErrors();
+        $response->assertRedirect(route('chirps.index'))->assertSessionHasNoErrors();
 
         $this->assertModelMissing($chirp);
     }
@@ -123,7 +121,7 @@ class ChirpsTest extends TestCase
 
         $chirp = Chirp::factory()->make(['user_id' => $user->id]);
 
-        $response = $this->post("/chirps", [
+        $response = $this->post(route('chirps.store'), [
             'message' => $chirp->message
         ]);
 
@@ -136,7 +134,7 @@ class ChirpsTest extends TestCase
 
         Chirp::factory()->make(['user_id' => $user->id]);
 
-        $response = $this->post("/chirps", []);
+        $response = $this->post(route('chirps.store'), []);
 
         $response->assertSessionHasErrors(['message']);
     }
@@ -149,7 +147,7 @@ class ChirpsTest extends TestCase
 
         User::factory(2)->create();
 
-        $this->post("/chirps", ['message' => 'Chirp']);
+        $this->post(route('chirps.store'), ['message' => 'Chirp']);
 
         Notification::assertCount(2);
     }
